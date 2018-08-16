@@ -32,7 +32,6 @@ from keras.engine.topology import Layer
 import numpy as np
 import tensorflow as tf
 from tensorflow import set_random_seed
-import matplotlib.pyplot as plt
 import pandas as pd
 pd.options.display.max_rows = 1000
 pd.options.display.max_columns = 1000
