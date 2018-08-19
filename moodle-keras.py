@@ -16,7 +16,7 @@ sys.stderr = stderr
 
 from keras import regularizers
 from keras.models import Sequential, Model
-from keras.optimizers import RMSprop, Adam
+from keras.optimizers import Adam
 from keras.callbacks import ReduceLROnPlateau, TensorBoard
 from keras import backend as K
 
@@ -43,10 +43,11 @@ params = {
     'activation': 'tanh',
     'verbose': 0,
     'batch_size': 500000,
-    'epochs': 300,
+    'epochs': 400,
     'repetitions': 3,
     'fc_hidden_u': 20,
     'dropout': 0.2,
+    'lr': 0.001,
 }
 
 # For hardcoded context layers
@@ -109,6 +110,7 @@ def get_testing_samples(test_file):
 def get_args_parser():
 
     parser = argparse.ArgumentParser(description='Specify the test file')
+    parser.add_argument('--run-prefix', dest='run_prefix')
     parser.add_argument('--test-dataset', dest='test_dataset')
     parser.add_argument('--model-names', dest='model_names')
     return parser
@@ -177,18 +179,21 @@ def get_networks(args, model_data):
 
     return networks
 
-def test_model(index, model, params, data, name=''):
+def test_model(index, model, params, data, name=None):
 
     model.compile(loss='categorical_crossentropy',
-                  optimizer=Adam(),
+                  optimizer=Adam(lr=params['lr']),
                   metrics=['accuracy'])
 
     if params['verbose'] == 1 and index == 0:
         # Print summaries.
         model.summary()
 
+    summary_name = data['test_dataset_id'] + '-' + str(time.time()) + '-' + params['name']
+    if name != None:
+        summary_name = name + '-' + summary_name
+
     callbacks = []
-    summary_name = name + '-' + str(time.time()) + '-' + params['name']
     summaries = TensorBoard(log_dir='./summaries/' + summary_name, histogram_freq=0,
         batch_size=params['batch_size'], write_grads=True)
     callbacks.append(summaries)
@@ -348,7 +353,7 @@ for network in networks:
         #if index == 0:
             #print('  Total params: ' + str(model.count_params()))
 
-        score = test_model(index, model, params, data, name=data['test_dataset_id'])
+        score = test_model(index, model, params, data, name=args.run_prefix)
         acc.append(score['acc'])
         f1.append(score['f1'])
 
