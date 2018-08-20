@@ -19,9 +19,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 output_filepath = os.path.join(script_dir, 'garbage', filename + '.html')
 
 df = pd.read_csv(filepath, parse_dates=True, encoding='UTF-8', skiprows=skiprows, dtype=np.float32)
-profile = pandas_profiling.ProfileReport(df)
+profile = pandas_profiling.ProfileReport(df, correlation_threshold=0.7)
 
-rejected_variables = profile.get_rejected_variables(threshold=0.9)
 profile.to_file(outputfile=output_filepath)
 
 webbrowser.open_new_tab(output_filepath)
