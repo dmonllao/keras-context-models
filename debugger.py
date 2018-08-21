@@ -1,4 +1,6 @@
 import csv
+import os
+import time
 
 import keras.callbacks as cbks
 import numpy as np
@@ -9,10 +11,11 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 
 class Metrics(cbks.Callback):
-    def __init__(self, x_test, y_test, summaries):
+    def __init__(self, x_test, y_test, summaries, test_dataset_id):
         self.x_test = x_test
         self.y_test = y_test
         self.summaries = summaries
+        self.test_dataset_id = test_dataset_id
         self.x_mismatches = []
 
         self.scores = {
@@ -35,7 +38,9 @@ class Metrics(cbks.Callback):
         x_mismatches = self.x_test.iloc[mismatches.flatten()]
 
         # Write into a file.
-        with open('mismatches.csv', 'wb') as mismatches_file:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        mismatches_filepath = os.path.join(script_dir, 'mismatches', self.test_dataset_id + '-' + str(int(time.time())) + '.csv')
+        with open(mismatches_filepath, 'wb') as mismatches_file:
             wr = csv.writer(mismatches_file, quoting=csv.QUOTE_NONNUMERIC)
             for index, features in enumerate(x_mismatches.values.tolist()):
                 wr.writerow(features + [str(y_test_1d[index])])
