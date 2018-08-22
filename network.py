@@ -1,17 +1,21 @@
 import time
 
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.callbacks import TensorBoard
-
 import numpy as np
 #np.random.seed(137)
 
 # Local packages.
 import layer
+import dataset
 import debugger
 
 def test(network, datasets, params, run_prefix, model_scores):
+
+    # Local import as this is using multi processing.
+    from keras.models import Model
+    import keras.backend as K
+    import tensorflow as tf
+    K.set_session(tf.Session())
+
     data = datasets[network['dataset']]
 
     start_time = time.time()
@@ -54,6 +58,9 @@ def test(network, datasets, params, run_prefix, model_scores):
 
 def test_model(index, model, params, data, name=None):
 
+    from keras.optimizers import Adam
+    from keras.callbacks import TensorBoard
+
     model.compile(loss='categorical_crossentropy',
                   optimizer=Adam(lr=params['lr']),
                   metrics=['accuracy'])
@@ -88,8 +95,8 @@ def test_model(index, model, params, data, name=None):
 def get_combinations(args, models):
 
     # List of datasets we will use.
-    if args.test_dataset is not None:
-        test_dataset_list = [args.test_dataset]
+    if args.test_datasets is not None:
+        test_dataset_list = args.test_datasets.split(',')
     else:
         # All available datasets.
         test_dataset_list = dataset.list_ids()
