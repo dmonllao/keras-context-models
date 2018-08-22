@@ -36,15 +36,17 @@ pd.options.display.max_columns = 1000
 import layer
 import network
 import debugger
+import dataset
+import models
 
-#########################################################################################
+###################################################################################
 
 params = {
     'activation': 'tanh',
     'verbose': 0,
     'batch_size': 500000,
     'epochs': 400,
-    'repetitions': 3,
+    'repetitions': 1,
     'fc_hidden_u': 20,
     'dropout': 0.2,
     'lr': 0.001,
@@ -83,30 +85,6 @@ params['separate_cols'] = {
     }
 }
 
-def get_training_samples(train_files):
-
-    for train_file in train_files:
-        train = pd.read_csv(train_file, skiprows=3, dtype=np.float32)
-
-        try:
-            x_train = np.concatenate([x_train, train[train.columns[:-1]].fillna(0)])
-        except NameError:
-            x_train = train[train.columns[:-1]].fillna(0)
-
-        try:
-            y_train = np.concatenate([y_train, np.eye(2)[train[train.columns[-1]].astype(int)]])
-        except NameError:
-            y_train = np.eye(2)[train[train.columns[-1]].astype(int)]
-
-    return x_train, y_train
-
-def get_testing_samples(test_file):
-    test = pd.read_csv(test_file, skiprows=3, dtype=np.float32)
-    x_test = test[test.columns[:-1]].fillna(0)
-    y_test = np.eye(2)[test[test.columns[-1]].astype(int)]
-
-    return x_test, y_test
-
 def get_args_parser():
 
     parser = argparse.ArgumentParser(description='Specify the test file')
@@ -132,8 +110,8 @@ def get_datasets(test_dataset_id):
 
     data = {'test_dataset_id': test_dataset_id}
 
-    data['x_train'], data['y_train'] = get_training_samples(train_files)
-    data['x_test'], data['y_test'] = get_testing_samples(test_file)
+    data['x_train'], data['y_train'] = dataset.get_training_samples(train_files)
+    data['x_test'], data['y_test'] = dataset.get_testing_samples(test_file)
     data['n_classes'] = data['y_train'].shape[1]
     data['n_features'] = data['x_train'].shape[1]
 
@@ -143,41 +121,6 @@ def get_datasets(test_dataset_id):
     #print('  Total num features: ' + str(data['n_features']))
 
     return data
-
-def list_dataset_ids():
-    datasets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets')
-    return sorted([os.path.splitext(x)[0] for x in os.listdir(datasets_dir) if re.match('^dataset\d\.csv', x)])
-
-def get_networks(args, model_data):
-
-    # List of datasets we will use.
-    if args.test_dataset is not None:
-        test_dataset_list = [args.test_dataset]
-    else:
-        # All available datasets.
-        test_dataset_list = list_dataset_ids()
-
-    # List of models we will evaluate.
-    if args.model_names is not None:
-        names = args.model_names.split(',')
-        test_models = []
-        for model_data in models:
-            for model_name in names:
-                if model_data['name'] == model_name:
-                    test_models.append(model_data)
-                    break
-    else:
-        # All existing models.
-        test_models = models
-
-    networks = []
-    for dataset_id in test_dataset_list:
-        for model_data in test_models:
-            network = model_data.copy()
-            network['dataset'] = dataset_id
-            networks.append(network)
-
-    return networks
 
 def test_model(index, model, params, data, name=None):
 
@@ -198,7 +141,7 @@ def test_model(index, model, params, data, name=None):
         batch_size=params['batch_size'], write_grads=True)
     callbacks.append(summaries)
 
-    metrics = debugger.Metrics(data['x_test'], data['y_test'], summaries)
+    metrics = debugger.Metrics(data['x_test'], data['y_test'], summaries, data['test_dataset_id'])
     callbacks.append(metrics)
 
     model.fit(data['x_train'], data['y_train'],
@@ -217,111 +160,9 @@ def test_model(index, model, params, data, name=None):
 parser = get_args_parser()
 args = parser.parse_args()
 
-models = []
+models = models.get_all()
 
-models.append({
-    'name': 'No context NN - 1 hidden.',
-    'network': network.fc_1h,
-    'feature_set': 'nocontext'
-})
-
-models.append({
-    'name': 'With peers NN - 1 hidden.',
-    'network': network.fc_1h,
-    'feature_set': 'withpeers'
-})
-
-models.append({
-    'name': 'All features NN - 1 hidden.',
-    'network': network.fc_1h,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'No context NN - 2 hidden.',
-    'network': network.fc_2h,
-    'feature_set': 'nocontext'
-})
-
-models.append({
-    'name': 'With peers NN - 2 hidden.',
-    'network': network.fc_2h,
-    'feature_set': 'withpeers'
-})
-
-models.append({
-    'name': 'All features NN - 2 hidden.',
-    'network': network.fc_2h,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Activity features trained with context.',
-    'network': network.inctx,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Activity features trained with context (REG).',
-    'network': network.inctx_reg,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Activity features trained with context + original activity features.',
-    'network': network.inctx_extra,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Activity features trained with context + original activity features (REG).',
-    'network': network.inctx_extra_reg,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Separate no-context / 1 context inputs.',
-    'network': network.simple_separate_1,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Separate no-context / 1 context inputs (REG).',
-    'network': network.simple_separate_1_reg,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Separate no-context / all context inputs.',
-    'network': network.simple_separate_all,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Separate no-context / all context inputs (REG).',
-    'network': network.simple_separate_all_reg,
-    'feature_set': 'all'
-})
-
-models.append({
-    'name': 'Separate activity / course peers / required.',
-    'network': network.complex_separate,
-    'feature_set': 'all'
-})
-
-#models.append({
-    #'name': 'Combinations of features in pairs.',
-    #'network': network.comb,
-    #'feature_set': 'all'
-#})
-
-#models.append({
-    #'name': 'Combinations of features in pairs (REG).',
-    #'network': network.comb_reg,
-    #'feature_set': 'all'
-#})
-
-networks = get_networks(args, models)
+networks = network.get_combinations(args, models)
 
 loaded_test_dataset = None
 model_scores = {}
@@ -353,7 +194,7 @@ for network in networks:
         #if index == 0:
             #print('  Total params: ' + str(model.count_params()))
 
-        score = test_model(index, model, params, data, name=args.run_prefix)
+        score = network.test(index, model, params, data, name=args.run_prefix)
         acc.append(score['acc'])
         f1.append(score['f1'])
 

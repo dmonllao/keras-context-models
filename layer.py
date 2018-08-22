@@ -12,6 +12,7 @@ from keras import backend as K
 from keras.engine.topology import Layer
 
 import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 def add_dropout(layer, params, name='dropout'):
     return Dropout(params['dropout'], name=name)(layer)
