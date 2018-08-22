@@ -35,15 +35,15 @@ class Metrics(cbks.Callback):
         y_pred_labels_1d = np.argmax(y_pred_labels, axis=1)
 
         mismatches = np.array([y_test_1d != y_pred_labels_1d])
-        x_mismatches = self.x_test.iloc[mismatches.flatten()]
+        x_mismatches = self.x_test[mismatches.flatten()]
 
         # Write into a file.
         script_dir = os.path.dirname(os.path.abspath(__file__))
         mismatches_filepath = os.path.join(script_dir, 'mismatches', self.test_dataset_id + '-' + str(int(time.time())) + '.csv')
         with open(mismatches_filepath, 'wb') as mismatches_file:
             wr = csv.writer(mismatches_file, quoting=csv.QUOTE_NONNUMERIC)
-            for index, features in enumerate(x_mismatches.values.tolist()):
-                wr.writerow(features + [str(y_test_1d[index])])
+            for index, features in enumerate(x_mismatches):
+                wr.writerow(features + [y_test_1d[index]])
 
         return
 
