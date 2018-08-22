@@ -67,9 +67,9 @@ def get_args_parser():
 
     parser = argparse.ArgumentParser(description='Specify the test file')
     parser.add_argument('--run-prefix', dest='run_prefix')
-    parser.add_argument('--test-dataset', dest='test_dataset')
+    parser.add_argument('--test-datasets', dest='test_datasets')
     parser.add_argument('--model-names', dest='model_names')
-    parser.add_argument('--threads', dest='threads', default=1, type=int)
+    parser.add_argument('--processes', dest='processes', default=1, type=int)
     parser.add_argument('--epochs', dest='epochs', default=DEFAULT_EPOCHS, type=int)
     parser.add_argument('--repetitions', dest='repetitions', default=DEFAULT_REPETITIONS, type=int)
     return parser
@@ -84,7 +84,7 @@ params['epochs'] = args.epochs
 
 networks = network.get_combinations(args, models.get_all())
 
-datasets = dataset.load()
+datasets = dataset.load(params)
 
 manager = multiprocessing.Manager()
 model_scores = manager.dict()
@@ -94,7 +94,7 @@ while nxt < len(networks):
 
     # Just references, no duplicated in memory.
     processes = []
-    for i in range(nxt, nxt + args.threads):
+    for i in range(nxt, nxt + args.processes):
 
         if i >= len(networks):
             # No more networks to process.
@@ -107,7 +107,7 @@ while nxt < len(networks):
     for p in processes:
         p.join()
 
-    nxt = nxt + args.threads
+    nxt = nxt + args.processes
 
 by_dataset = {}
 for model_score in model_scores.values():
