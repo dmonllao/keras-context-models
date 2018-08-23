@@ -9,6 +9,7 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
 
 class Metrics(cbks.Callback):
     def __init__(self, x_test, y_test, summaries, test_dataset_id):
@@ -21,6 +22,7 @@ class Metrics(cbks.Callback):
         self.scores = {
             'acc': 0.,
             'f1': 0.,
+            'recall': 0.,
         }
 
     def on_train_begin(self, logs={}):
@@ -72,6 +74,14 @@ class Metrics(cbks.Callback):
             summary_value = summary.value.add()
             summary_value.simple_value = self.scores['f1']
             summary_value.tag = 'val_epoch_f1'
+            self.summaries.writer.add_summary(summary, epoch)
+
+        self.scores['recall'] = recall_score(y_test_1d, y_pred_labels_1d)
+        if self.summaries:
+            summary = tf.Summary()
+            summary_value = summary.value.add()
+            summary_value.simple_value = self.scores['recall']
+            summary_value.tag = 'val_epoch_recall'
             self.summaries.writer.add_summary(summary, epoch)
 
         return

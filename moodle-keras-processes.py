@@ -32,8 +32,8 @@ params = {
 
 # For hardcoded context layers
 params['cols'] = {
-    'activity': [0, 1, 2, 5, 7, 8, 9, 28, 30, 32, 34, 36, 39],
-    'peers': [3, 6, 10, 29, 31, 33, 35, 37, 40],
+    'activity': [0, 1, 2, 5, 7, 8, 9, 28, 30, 32, 34, 36, 39, 41, 43, 45],
+    'peers': [3, 6, 10, 29, 31, 33, 35, 37, 40, 42, 44, 46],
     'courseinfo': [4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 38],
 }
 params['cols']['ctx'] = params['cols']['peers'] + params['cols']['courseinfo']
@@ -115,10 +115,11 @@ for model_score in model_scores.values():
         by_dataset[model_score['dataset']] = {}
     by_dataset[model_score['dataset']][model_score['name']] = [
         model_score['f1'],
-        model_score['acc']
+        model_score['acc'],
+        model_score['recall'],
     ]
 
 for dataset_id, models in by_dataset.items():
     print('Dataset ' + dataset_id)
     for model_name, result in models.items():
-        print(model_name + ',' + str(result[0]) + ',' + str(result[1]))
+        print(model_name + ',' + str(result[0]) + ',' + str(result[1]) + ',' + str(result[2]))

@@ -23,6 +23,7 @@ def test(network, datasets, params, run_prefix, model_scores):
 
     acc = []
     f1 = []
+    recall = []
     for index in range(params['repetitions']):
 
         params['n_features'] = data['n_features']
@@ -41,18 +42,22 @@ def test(network, datasets, params, run_prefix, model_scores):
         score = test_model(index, model, params, data, name=run_prefix)
         acc.append(score['acc'])
         f1.append(score['f1'])
+        recall.append(score['recall'])
 
     print('  Time: ' + str(time.time() - start_time))
     #print('  Median accuracy: ' + str(np.median(acc)))
     #print('  Average accuracy: ' + str(model_score['acc']))
     #print('  Median F1: ' + str(np.median(f1)))
     #print(' *Average F1: ' + str(model_score['f1']))
+    #print('  Median recall: ' + str(np.median(recall)))
+    #print(' *Average recall: ' + str(model_score['recall']))
 
     model_score = {
         'name': network['name'],
         'dataset': network['dataset'],
         'acc': np.average(acc),
         'f1': np.average(f1),
+        'recall': np.average(recall),
     }
     model_scores[network['dataset'] + '-' + network['name']] = model_score
 
