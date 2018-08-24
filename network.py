@@ -88,8 +88,16 @@ def test_model(index, model, params, data, name=None):
     if name != None:
         summary_name = name + '-' + summary_name
 
+    # Histograms need a validation_split.
+    if params['debug'] == 1:
+        histogram_freq = 30
+        validation_split = 0.05
+    else:
+        histogram_freq = 0
+        validation_split = 0.
+
     callbacks = []
-    summaries = TensorBoard(log_dir='./summaries/' + summary_name, histogram_freq=10,
+    summaries = TensorBoard(log_dir='./summaries/' + summary_name, histogram_freq=histogram_freq,
         batch_size=params['batch_size'], write_grads=True)
     callbacks.append(summaries)
 
@@ -100,7 +108,7 @@ def test_model(index, model, params, data, name=None):
                 batch_size=params['batch_size'],
                 epochs=params['epochs'],
                 verbose=params['verbose'],
-                validation_split=0.05,
+                validation_split=validation_split,
                 callbacks=callbacks,
                 shuffle=True)
 
