@@ -4,9 +4,6 @@ import time
 
 import keras.callbacks as cbks
 import numpy as np
-import tensorflow as tf
-tf.logging.set_verbosity(tf.logging.ERROR)
-
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import recall_score
@@ -53,6 +50,10 @@ class Metrics(cbks.Callback):
         return
 
     def on_epoch_end(self, epoch, logs={}):
+
+        # For multiprocessing.
+        import tensorflow as tf
+        tf.logging.set_verbosity(tf.logging.ERROR)
 
         y_pred = self.model.predict(self.x_test)
         y_pred_labels = y_pred.round()
