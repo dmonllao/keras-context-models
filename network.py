@@ -182,7 +182,7 @@ def simple_separate(params, options):
 
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.SplitActivityAndContext(base_layer, params, n_ctx_units=n_ctx_units,
-                                               reg=options['reg'])
+                                               reg=options['reg'], context_includes_peers=options['context_includes_peers'])
     base_layer = layer.add_dropout(base_layer, params)
     base_layer = layer.add_fc(base_layer, params)
     output = layer.add_softmax(base_layer, params)

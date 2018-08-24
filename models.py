@@ -40,21 +40,39 @@ def get_all():
     })
 
     models.append({
-        'name': 'Separate no-context / 1 context inputs (REG).',
+        'name': 'Separate no-context / 1 context inputs.',
         'network': network.simple_separate,
         'feature_set': 'all',
-        'options': {'reg': True, 'n_ctx_units': 1},
+        'options': {
+            'reg': True,
+            'n_ctx_units': 1,
+            'context_includes_peers': True,
+        },
+    })
+
+    models.append({
+        'name': 'Separate activity & peers / course inputs.',
+        'network': network.simple_separate,
+        'feature_set': 'all',
+        'options': {
+            'reg': True,
+            'n_ctx_units': 1,
+            'context_includes_peers': False,
+        },
     })
 
     models.append({
         'name': 'Separate no-context / all context inputs.',
         'network': network.simple_separate,
         'feature_set': 'all',
-        'options': {'reg': False},
+        'options': {
+            'reg': False,
+            'context_includes_peers': True,
+        },
     })
 
     models.append({
-        'name': 'Separate activity / course peers / required.',
+        'name': 'Separate activity / course / peers.',
         'network': network.complex_separate,
         'feature_set': 'all',
     })
@@ -64,13 +82,6 @@ def get_all():
         #'network': network.comb,
         #'feature_set': 'all',
         #'options': {'reg': False},
-    #})
-
-    #models.append({
-        #'name': 'Combinations of features in pairs (REG).',
-        #'network': network.comb,
-        #'feature_set': 'all',
-        #'options': {'reg': True},
     #})
 
     return models

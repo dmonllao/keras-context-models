@@ -103,7 +103,7 @@ def NoCourseInfo(inputs, params):
 
     return Lambda(subselect_cols, arguments={'cols': cols}, name=layer_name)(inputs)
 
-def ContextualiseActivity(inputs, params, reg=False):
+def ContextualiseActivity(inputs, params, reg=True):
     """Each no-context feature combined with a hardcoded list of context features."""
 
     kernel_reg, activity_reg = get_regularization(reg)
@@ -149,13 +149,22 @@ def ContextualiseActivityAndOriginalActivity(inputs, params, reg=False):
 
     return concatenate(layers, axis=1)
 
-def SplitActivityAndContext(inputs, params, n_ctx_units=False, reg=False):
+def SplitActivityAndContext(inputs, params, n_ctx_units=False, reg=False, context_includes_peers=True):
     """Split input features in context and no-context."""
 
     layers = []
 
+    if context_includes_peers is True:
+        context_cols = params['cols']['ctx']
+        no_context_cols = params['cols']['activity']
+        ctx_layer_activation = params['activation']
+    else:
+        context_cols = params['cols']['courseinfo']
+        no_context_cols = params['cols']['activity'] + params['cols']['peers']
+        ctx_layer_activation = 'relu'
+
     # Context features learn separately.
-    cols = K.constant(params['cols']['ctx'], dtype='int32')
+    cols = K.constant(context_cols, dtype='int32')
     layer_name = 'context'
     ctx_input = Lambda(subselect_cols, arguments={'cols': cols}, name=layer_name)(inputs)
 
@@ -165,17 +174,17 @@ def SplitActivityAndContext(inputs, params, n_ctx_units=False, reg=False):
 
     kernel_reg, activity_reg = get_regularization(reg)
 
-    ctx_layer = Dense(n_ctx_units, activation=params['activation'], name='W-' + layer_name,
+    ctx_layer = Dense(n_ctx_units, activation=ctx_layer_activation, name='W-' + layer_name,
                       kernel_regularizer=kernel_reg, activity_regularizer=activity_reg)(ctx_input)
     layers.append(ctx_layer)
 
-    # Student activity context features learn separately.
-    cols = K.constant(params['cols']['activity'], dtype='int32')
+    # No context features learn separately.
+    cols = K.constant(no_context_cols, dtype='int32')
     layer_name = 'no-context'
     no_ctx_input = Lambda(subselect_cols, arguments={'cols': cols}, name=layer_name)(inputs)
 
     # Number of units equal to the number of no context features.
-    layers.append(Dense(len(params['cols']['activity']), activation=params['activation'], name='W-' + layer_name)(no_ctx_input))
+    layers.append(Dense(len(no_context_cols), activation=params['activation'], name='W-' + layer_name)(no_ctx_input))
 
     return concatenate(layers, axis=1)
 
