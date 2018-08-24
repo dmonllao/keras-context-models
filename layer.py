@@ -11,9 +11,6 @@ from keras.layers import Dense, Dropout, Lambda, Input, concatenate, multiply
 from keras import backend as K
 from keras.engine.topology import Layer
 
-import tensorflow as tf
-tf.logging.set_verbosity(tf.logging.ERROR)
-
 def add_dropout(layer, params, name='dropout'):
     return Dropout(params['dropout'], name=name)(layer)
 
@@ -45,6 +42,11 @@ def baseline(params):
     return input_layer, base_layer
 
 def subselect_cols(x, cols):
+
+    # For multiprocessing.
+    import tensorflow as tf
+    tf.logging.set_verbosity(tf.logging.ERROR)
+
     # Return the selected columns from the set of input features.
     return tf.gather(x, cols, axis=1)
 
