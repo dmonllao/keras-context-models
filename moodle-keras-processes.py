@@ -24,6 +24,7 @@ DEFAULT_REPETITIONS = 1
 params = {
     'activation': 'tanh',
     'verbose': 0,
+    'debug': 0,
     'batch_size': 500000,
     'fc_hidden_u': 20,
     'dropout': 0.2,
@@ -32,8 +33,8 @@ params = {
 
 # For hardcoded context layers
 params['cols'] = {
-    'activity': [0, 1, 2, 5, 7, 8, 9, 28, 30, 32, 34, 36, 39, 41, 43, 45],
-    'peers': [3, 6, 10, 29, 31, 33, 35, 37, 40, 42, 44, 46],
+    'activity': [0, 1, 2, 5, 7, 8, 9, 28, 30, 32, 34, 36, 41, 43, 45],
+    'peers': [3, 6, 10, 29, 31, 33, 35, 37, 42, 44, 46],
     'courseinfo': [4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 38],
 }
 params['cols']['ctx'] = params['cols']['peers'] + params['cols']['courseinfo']
@@ -59,7 +60,7 @@ params['separate_cols'] = {
         'units': 2,
         'activation': 'relu',
         'kernelreg': regularizers.l2(0.01),
-        'activityreg': regularizers.l1(0.01),
+        'activityreg': None,
     }
 }
 
