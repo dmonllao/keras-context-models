@@ -41,14 +41,14 @@ def get_all():
 
     models.append({
         'name': 'Separate no-context / 1 context inputs (REG).',
-        'network': network.simple_separate_1,
+        'network': network.simple_separate,
         'feature_set': 'all',
-        'options': {'reg': True},
+        'options': {'reg': True, 'n_ctx_units': 1},
     })
 
     models.append({
         'name': 'Separate no-context / all context inputs.',
-        'network': network.simple_separate_all,
+        'network': network.simple_separate,
         'feature_set': 'all',
         'options': {'reg': False},
     })
