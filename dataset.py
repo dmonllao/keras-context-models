@@ -55,13 +55,13 @@ def standardize_activity_and_peers(x, params):
     #print(x[4])
     return x
 
-def load(params):
+def load(params, test_datasets):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Loading in memory. Not a massive issue as these datasets are relatively small.
     datasets = {}
-    for dataset_id in it_them():
+    for dataset_id in test_dataset_list(test_datasets):
         datasets[dataset_id] = {'test_dataset_id': dataset_id}
 
         test_file = os.path.join(script_dir, 'datasets', dataset_id + '.csv')
@@ -86,6 +86,17 @@ def load(params):
         #print('  Total num features: ' + str(datasets[dataset_id]['n_features']))
 
     return datasets
+
+def test_dataset_list(test_datasets):
+
+    # List of datasets we will use.
+    if test_datasets is not None:
+        test_dataset_list = test_datasets.split(',')
+    else:
+        # All available datasets.
+        test_dataset_list = dataset.list_ids()
+
+    return test_dataset_list
 
 def list_ids():
     datasets_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datasets')
