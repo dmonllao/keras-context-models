@@ -146,7 +146,7 @@ def fc(params, options):
 
     if options['n_layers'] == 2:
         base_layer = layer.add_fc(base_layer, params, name='pre-hidden')
-        base_layer = layer.add_dropout(base_layer, params)
+        base_layer = layer.add_dropout(base_layer, params, name='pre-dropout')
 
     base_layer = layer.add_fc(base_layer, params)
     base_layer = layer.add_dropout(base_layer, params)
@@ -189,7 +189,7 @@ def simple_separate(params, options):
     return input_layer, output
 
 # Separate inputs, single output.
-def complex_separate(params):
+def complex_separate(params, options):
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.SplitAllInputs(base_layer, params)
     base_layer = layer.add_dropout(base_layer, params)

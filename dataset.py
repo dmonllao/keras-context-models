@@ -94,7 +94,7 @@ def test_dataset_list(test_datasets):
         test_dataset_list = test_datasets.split(',')
     else:
         # All available datasets.
-        test_dataset_list = dataset.list_ids()
+        test_dataset_list = list_ids()
 
     return test_dataset_list
 
