@@ -44,15 +44,21 @@ def it_them():
     return iter(datasets)
 
 def standardize_activity_and_peers(x, params):
-    #print('yeah')
-    #print(x[0])
-    #print(x[4])
+
     for col_index in params['cols']['peers']:
-        meanized = (x[:, col_index - 1] - x[:, col_index]) / 2
-        #x[:, col_index - 1] = meanized
-        x[:, col_index] = meanized
-    #print(x[3])
-    #print(x[4])
+        dataset_avg = np.average(x[:, col_index - 1])
+        x[:, col_index] = (x[:, col_index - 1] - x[:, col_index]) / 2
+        dataset_meanized = (x[:, col_index - 1] - dataset_avg) / 2
+
+        dataset_meanized_col = dataset_meanized.reshape(-1, 1)
+        #print('yeah')
+        #print('dataset avg: ' + str(dataset_avg))
+        #print(x[0:5, col_index - 1])
+        #print(x[0:5, col_index])
+        #print(course_meanized[0:5])
+        #print(dataset_meanized[0:5])
+        x = np.concatenate((x, dataset_meanized_col), axis=1)
+
     return x
 
 def load(params, test_datasets):
@@ -74,18 +80,37 @@ def load(params, test_datasets):
 
         datasets[dataset_id]['x_train'], datasets[dataset_id]['y_train'] = get_training_samples(train_files)
         datasets[dataset_id]['x_test'], datasets[dataset_id]['y_test'] = get_testing_samples(test_file)
-        datasets[dataset_id]['n_classes'] = datasets[dataset_id]['y_train'].shape[1]
-        datasets[dataset_id]['n_features'] = datasets[dataset_id]['x_train'].shape[1]
 
-        datasets[dataset_id]['x_train'] = standardize_activity_and_peers(datasets[dataset_id]['x_train'], params)
+        # We don't update params with the new colums on the first run as it will affect the 2nd run.
         datasets[dataset_id]['x_test'] = standardize_activity_and_peers(datasets[dataset_id]['x_test'], params)
+        datasets[dataset_id]['x_train'] = standardize_activity_and_peers(datasets[dataset_id]['x_train'], params)
 
         #print('Testing ' + dataset_id + ' with ' + str(len(train_files)) + ' training datasets')
         #print('  Data train size: '+ str(datasets[dataset_id]['x_train'].shape[0]))
         #print('  Data test size: ' + str(datasets[dataset_id]['x_test'].shape[0]))
         #print('  Total num features: ' + str(datasets[dataset_id]['n_features']))
 
-    return datasets
+    # Add standardize columns as peers cols.
+    # It does not matter which dataset we fit in as all of them have the same number of columns.
+    params = add_additional_cols(datasets[dataset_id]['x_test'], params)
+
+    # Iterate again now that we have the final number of features.
+    for dataset_id in test_dataset_list(test_datasets):
+        datasets[dataset_id]['n_classes'] = datasets[dataset_id]['y_train'].shape[1]
+        datasets[dataset_id]['n_features'] = datasets[dataset_id]['x_train'].shape[1]
+
+    return datasets, params
+
+def add_additional_cols(x, params):
+
+    prev_last = params['cols']['peers'][-1]
+    new_len = x.shape[1]
+
+    for i in range(prev_last + 1, new_len):
+        params['cols']['peers'].append(i)
+        params['cols']['ctx'].append(i)
+
+    return params
 
 def test_dataset_list(test_datasets):
 

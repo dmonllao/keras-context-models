@@ -85,7 +85,7 @@ params['epochs'] = args.epochs
 
 networks = network.get_combinations(args, models.get_all())
 
-datasets = dataset.load(params, args.test_datasets)
+datasets, params = dataset.load(params, args.test_datasets)
 
 manager = multiprocessing.Manager()
 model_scores = manager.dict()
