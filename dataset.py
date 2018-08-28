@@ -47,17 +47,21 @@ def standardize_activity_and_peers(x, params):
 
     for col_index in params['cols']['peers']:
         dataset_avg = np.average(x[:, col_index - 1])
-        x[:, col_index] = (x[:, col_index - 1] - x[:, col_index]) / 2
+        #x[:, col_index] = (x[:, col_index - 1] - x[:, col_index]) / 2
+        course_meanized = (x[:, col_index - 1] - x[:, col_index]) / 2
         dataset_meanized = (x[:, col_index - 1] - dataset_avg) / 2
 
+        dataset_avg_col = np.full((x.shape[0], 1), dataset_avg)
         dataset_meanized_col = dataset_meanized.reshape(-1, 1)
+        course_meanized_col = course_meanized.reshape(-1, 1)
+
         #print('yeah')
         #print('dataset avg: ' + str(dataset_avg))
         #print(x[0:5, col_index - 1])
         #print(x[0:5, col_index])
         #print(course_meanized[0:5])
         #print(dataset_meanized[0:5])
-        x = np.concatenate((x, dataset_meanized_col), axis=1)
+        x = np.concatenate((x, course_meanized_col, dataset_meanized_col, dataset_avg_col), axis=1)
 
     return x
 
