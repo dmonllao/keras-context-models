@@ -14,7 +14,7 @@ from keras.engine.topology import Layer
 def add_dropout(layer, params, name='dropout'):
     return Dropout(params['dropout'], name=name)(layer)
 
-def add_fc(layer, params, n_units=False, regularization=True, name='main-hidden'):
+def add_fc(layer, params, n_units=False, regularization=False, name='main-hidden'):
     if n_units == False:
         n_units = params['fc_hidden_u']
 

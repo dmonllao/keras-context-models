@@ -145,7 +145,7 @@ def fc(params, options):
     input_layer, base_layer = layer.baseline(params)
 
     if options['n_layers'] == 2:
-        base_layer = layer.add_fc(base_layer, params, name='pre-hidden')
+        base_layer = layer.add_fc(base_layer, params, name='pre-hidden', regularization=True)
         base_layer = layer.add_dropout(base_layer, params, name='pre-dropout')
 
     base_layer = layer.add_fc(base_layer, params)

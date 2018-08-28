@@ -66,7 +66,7 @@ def get_all():
         'network': network.simple_separate,
         'feature_set': 'all',
         'options': {
-            'reg': False,
+            'reg': True,
             'context_includes_peers': True,
         },
     })
