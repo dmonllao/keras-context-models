@@ -51,6 +51,16 @@ def get_all():
     })
 
     models.append({
+        'name': 'Separate no-context / all context inputs.',
+        'network': network.simple_separate,
+        'feature_set': 'all',
+        'options': {
+            'reg': True,
+            'context_includes_peers': True,
+        },
+    })
+
+    models.append({
         'name': 'Separate activity & peers / course inputs.',
         'network': network.simple_separate,
         'feature_set': 'all',
@@ -58,16 +68,6 @@ def get_all():
             'reg': True,
             'n_ctx_units': 1,
             'context_includes_peers': False,
-        },
-    })
-
-    models.append({
-        'name': 'Separate no-context / all context inputs.',
-        'network': network.simple_separate,
-        'feature_set': 'all',
-        'options': {
-            'reg': True,
-            'context_includes_peers': True,
         },
     })
 

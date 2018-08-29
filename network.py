@@ -157,8 +157,9 @@ def fc(params, options):
 def inctx(params, options):
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.ContextualiseActivity(base_layer, params, reg=options['reg'])
-    base_layer = layer.add_dropout(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
@@ -166,8 +167,9 @@ def inctx(params, options):
 def inctx_extra(params, options):
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.ContextualiseActivityAndOriginalActivity(base_layer, params, reg=options['reg'])
-    base_layer = layer.add_dropout(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
@@ -183,8 +185,9 @@ def simple_separate(params, options):
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.SplitActivityAndContext(base_layer, params, n_ctx_units=n_ctx_units,
                                                reg=options['reg'], context_includes_peers=options['context_includes_peers'])
-    base_layer = layer.add_dropout(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
@@ -192,8 +195,9 @@ def simple_separate(params, options):
 def complex_separate(params, options):
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.SplitAllInputs(base_layer, params)
-    base_layer = layer.add_dropout(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
+    base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
