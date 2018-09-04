@@ -59,6 +59,7 @@ def standardize_activity_and_peers(x, params):
         dataset_avg_col = np.full((x.shape[0], 1), dataset_avg)
         dataset_meanized_col = dataset_meanized.reshape(-1, 1)
         course_meanized_col = course_meanized.reshape(-1, 1)
+
         x = np.concatenate(
             (x, course_meanized_col, dataset_meanized_col, dataset_avg_col),
             axis=1)
@@ -79,16 +80,19 @@ def load(params, test_datasets):
         test_file = os.path.join(script_dir, 'datasets', dataset_id + '.csv')
         train_files = []
         for train_dataset_id in it_them():
-            if train_dataset_id == dataset_id:
+            if train_dataset_id != dataset_id:
                 continue
 
             train_files.append(os.path.join(
                 script_dir, 'datasets', train_dataset_id + '.csv'))
 
-        datasets[dataset_id]['x_train'], datasets[dataset_id]['y_train'] = \
-            get_training_samples(train_files)
-        datasets[dataset_id]['x_test'], datasets[dataset_id]['y_test'] = \
-            get_testing_samples(test_file)
+        x, y = get_training_samples(train_files)
+        split = x.shape[0] - int(x.shape[0] / 10)
+
+        datasets[dataset_id]['x_train'] = x[:split]
+        datasets[dataset_id]['x_test'] = x[split:]
+        datasets[dataset_id]['y_train'] = y[:split]
+        datasets[dataset_id]['y_test'] = y[split:]
 
         # We don't update params with the new colums on the first run as it
         # will affect the 2nd run.
