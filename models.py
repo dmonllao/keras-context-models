@@ -1,5 +1,6 @@
 import network
 
+
 def get_all():
 
     models = []
@@ -33,7 +34,8 @@ def get_all():
     })
 
     models.append({
-        'name': 'Activity features trained with context + original activity features.',
+        'name': 'Activity features trained with context + original ' +
+                'activity features.',
         'network': network.inctx_extra,
         'feature_set': 'all',
         'options': {'reg': False},

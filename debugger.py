@@ -8,6 +8,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import recall_score
 
+
 class Metrics(cbks.Callback):
     def __init__(self, x_test, y_test, summaries, test_dataset_id):
         self.x_test = x_test
@@ -38,7 +39,10 @@ class Metrics(cbks.Callback):
 
         # Write into a file.
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        mismatches_filepath = os.path.join(script_dir, 'mismatches', self.test_dataset_id + '-' + str(int(time.time())) + '.csv')
+        filename = self.test_dataset_id + '-' + str(int(time.time())) + '.csv'
+
+        mismatches_filepath = os.path.join(
+            script_dir, 'mismatches', filename)
         with open(mismatches_filepath, 'wb') as mismatches_file:
             wr = csv.writer(mismatches_file, quoting=csv.QUOTE_NONNUMERIC)
             for index, features in enumerate(x_mismatches):
@@ -92,4 +96,3 @@ class Metrics(cbks.Callback):
 
     def on_batch_end(self, batch, logs={}):
         return
-

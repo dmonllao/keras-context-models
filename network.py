@@ -1,12 +1,13 @@
 import time
 
 import numpy as np
-#np.random.seed(137)
+# np.random.seed(137)
 
 # Local packages.
 import layer
 import dataset
 import debugger
+
 
 def test(network, datasets, params, run_prefix, model_scores):
 
@@ -20,7 +21,8 @@ def test(network, datasets, params, run_prefix, model_scores):
     data = datasets[network['dataset']]
 
     start_time = time.time()
-    print('\nModel ' + network['name'] + ' using ' + network['dataset'] + ' as test dataset')
+    print('\nModel ' + network['name'] + ' using ' +
+          network['dataset'] + ' as test dataset')
 
     acc = []
     f1 = []
@@ -55,12 +57,6 @@ def test(network, datasets, params, run_prefix, model_scores):
         K.clear_session()
 
     print('  Time: ' + str(time.time() - start_time))
-    #print('  Median accuracy: ' + str(np.median(acc)))
-    #print('  Average accuracy: ' + str(model_score['acc']))
-    #print('  Median F1: ' + str(np.median(f1)))
-    #print(' *Average F1: ' + str(model_score['f1']))
-    #print('  Median recall: ' + str(np.median(recall)))
-    #print(' *Average recall: ' + str(model_score['recall']))
 
     model_score = {
         'name': network['name'],
@@ -70,6 +66,7 @@ def test(network, datasets, params, run_prefix, model_scores):
         'recall': np.average(recall),
     }
     model_scores[network['dataset'] + '-' + network['name']] = model_score
+
 
 def test_model(index, model, params, data, name=None):
 
@@ -84,8 +81,9 @@ def test_model(index, model, params, data, name=None):
         # Print summaries.
         model.summary()
 
-    summary_name = data['test_dataset_id'] + '-' + str(time.time()) + '-' + params['name']
-    if name != None:
+    summary_name = data['test_dataset_id'] + '-' + \
+        str(time.time()) + '-' + params['name']
+    if name is not None:
         summary_name = name + '-' + summary_name
 
     # Histograms need a validation_split.
@@ -97,23 +95,26 @@ def test_model(index, model, params, data, name=None):
         validation_split = 0.
 
     callbacks = []
-    summaries = TensorBoard(log_dir='./summaries/' + summary_name, histogram_freq=histogram_freq,
-        batch_size=params['batch_size'], write_grads=True)
+    summaries = TensorBoard(log_dir='./summaries/' + summary_name,
+                            histogram_freq=histogram_freq,
+                            batch_size=params['batch_size'], write_grads=True)
     callbacks.append(summaries)
 
-    metrics = debugger.Metrics(data['x_test'], data['y_test'], summaries, data['test_dataset_id'])
+    metrics = debugger.Metrics(
+        data['x_test'], data['y_test'], summaries, data['test_dataset_id'])
     callbacks.append(metrics)
 
     model.fit(data['x_train'], data['y_train'],
-                batch_size=params['batch_size'],
-                epochs=params['epochs'],
-                verbose=params['verbose'],
-                validation_split=validation_split,
-                callbacks=callbacks,
-                shuffle=True)
+              batch_size=params['batch_size'],
+              epochs=params['epochs'],
+              verbose=params['verbose'],
+              validation_split=validation_split,
+              callbacks=callbacks,
+              shuffle=True)
 
     print(metrics.scores)
     return metrics.scores
+
 
 def get_combinations(args, models):
 
@@ -141,11 +142,13 @@ def get_combinations(args, models):
 
     return networks
 
+
 def fc(params, options):
     input_layer, base_layer = layer.baseline(params)
 
     if options['n_layers'] == 2:
-        base_layer = layer.add_fc(base_layer, params, name='pre-hidden', regularization=True)
+        base_layer = layer.add_fc(
+            base_layer, params, name='pre-hidden', regularization=True)
         base_layer = layer.add_dropout(base_layer, params, name='pre-dropout')
 
     base_layer = layer.add_fc(base_layer, params)
@@ -153,28 +156,34 @@ def fc(params, options):
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
-# In-context features.
+
 def inctx(params, options):
+    """In-context features."""
     input_layer, base_layer = layer.baseline(params)
-    base_layer = layer.ContextualiseActivity(base_layer, params, reg=options['reg'])
+    base_layer = layer.ContextualiseActivity(
+        base_layer, params, reg=options['reg'])
     base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
     base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
-# In-context features + original inputs.
+
 def inctx_extra(params, options):
+    """In-context features + original inputs."""
+
     input_layer, base_layer = layer.baseline(params)
-    base_layer = layer.ContextualiseActivityAndOriginalActivity(base_layer, params, reg=options['reg'])
+    base_layer = layer.ContextualiseActivityAndOriginalActivity(
+        base_layer, params, reg=options['reg'])
     base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
     base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
-# Simple context / no-context separation.
+
 def simple_separate(params, options):
+    """Simple context / no-context separation."""
 
     if 'n_ctx_units' in options:
         n_ctx_units = options['n_ctx_units']
@@ -182,17 +191,22 @@ def simple_separate(params, options):
         # Will default to the number of context features.
         n_ctx_units = False
 
+    peers = options['context_includes_peers']
+
     input_layer, base_layer = layer.baseline(params)
-    base_layer = layer.SplitActivityAndContext(base_layer, params, n_ctx_units=n_ctx_units,
-                                               reg=options['reg'], context_includes_peers=options['context_includes_peers'])
+    base_layer = layer.SplitActivityAndContext(base_layer, params,
+                                               n_ctx_units=n_ctx_units,
+                                               reg=options['reg'],
+                                               context_includes_peers=peers)
     base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
     base_layer = layer.add_fc(base_layer, params)
     base_layer = layer.add_dropout(base_layer, params)
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
-# Separate inputs, single output.
+
 def complex_separate(params, options):
+    """Separate inputs, single output."""
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.SplitAllInputs(base_layer, params)
     base_layer = layer.add_dropout(base_layer, params, name='base-dropout')
@@ -201,8 +215,9 @@ def complex_separate(params, options):
     output = layer.add_softmax(base_layer, params)
     return input_layer, output
 
-# Combinations of 'r' features.
+
 def comb(params, options):
+    """Combinations of 'r' features."""
     input_layer, base_layer = layer.baseline(params)
     base_layer = layer.Combinations(base_layer, params, options['reg'])
     base_layer = layer.add_dropout(base_layer, params)
