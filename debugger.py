@@ -4,10 +4,8 @@ import time
 
 import keras.callbacks as cbks
 import numpy as np
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import recall_score
 
+import metric
 
 class Metrics(cbks.Callback):
     def __init__(self, x_test, y_test, summaries, test_dataset_id):
@@ -28,25 +26,25 @@ class Metrics(cbks.Callback):
 
     def on_train_end(self, logs={}):
 
-        y_pred = self.model.predict(self.x_test)
-        y_pred_labels = y_pred.round()
+        # y_pred = self.model.predict(self.x_test)
+        # y_pred_labels = y_pred.round()
 
-        y_test_1d = np.argmax(self.y_test, axis=1)
-        y_pred_labels_1d = np.argmax(y_pred_labels, axis=1)
+        # y_test_1d = np.argmax(self.y_test, axis=1)
+        # y_pred_labels_1d = np.argmax(y_pred_labels, axis=1)
 
-        mismatches = np.array([y_test_1d != y_pred_labels_1d])
-        x_mismatches = self.x_test[mismatches.flatten()]
+        # mismatches = np.array([y_test_1d != y_pred_labels_1d])
+        # x_mismatches = self.x_test[mismatches.flatten()]
 
-        # Write into a file.
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        filename = self.test_dataset_id + '-' + str(int(time.time())) + '.csv'
+        # # Write into a file.
+        # script_dir = os.path.dirname(os.path.abspath(__file__))
+        # filename = self.test_dataset_id + '-' + str(int(time.time())) + '.csv'
 
-        mismatches_filepath = os.path.join(
-            script_dir, 'mismatches', filename)
-        with open(mismatches_filepath, 'wb') as mismatches_file:
-            wr = csv.writer(mismatches_file, quoting=csv.QUOTE_NONNUMERIC)
-            for index, features in enumerate(x_mismatches):
-                wr.writerow(features + [y_test_1d[index]])
+        # mismatches_filepath = os.path.join(
+        #     script_dir, 'mismatches', filename)
+        # with open(mismatches_filepath, 'wb') as mismatches_file:
+        #     wr = csv.writer(mismatches_file, quoting=csv.QUOTE_NONNUMERIC)
+        #     for index, features in enumerate(x_mismatches):
+        #         wr.writerow(features + [y_test_1d[index]])
 
         return
 
@@ -59,13 +57,13 @@ class Metrics(cbks.Callback):
         import tensorflow as tf
         tf.logging.set_verbosity(tf.logging.ERROR)
 
-        y_pred = self.model.predict(self.x_test)
-        y_pred_labels = y_pred.round()
+        y_pred_labels_1d = metric.get_predict_labels(
+            self.model.predict(self.x_test)
+        )
 
-        y_test_1d = np.argmax(self.y_test, axis=1)
-        y_pred_labels_1d = np.argmax(y_pred_labels, axis=1)
+        self.scores['acc'], self.scores['f1'], self.scores['recall'] = \
+            metric.get(y_pred_labels_1d, self.y_test)
 
-        self.scores['acc'] = accuracy_score(y_test_1d, y_pred_labels_1d)
         if self.summaries:
             summary = tf.Summary()
             summary_value = summary.value.add()
@@ -73,7 +71,6 @@ class Metrics(cbks.Callback):
             summary_value.tag = 'val_epoch_accuracy'
             self.summaries.writer.add_summary(summary, epoch)
 
-        self.scores['f1'] = f1_score(y_test_1d, y_pred_labels_1d)
         if self.summaries:
             summary = tf.Summary()
             summary_value = summary.value.add()
@@ -81,7 +78,6 @@ class Metrics(cbks.Callback):
             summary_value.tag = 'val_epoch_f1'
             self.summaries.writer.add_summary(summary, epoch)
 
-        self.scores['recall'] = recall_score(y_test_1d, y_pred_labels_1d)
         if self.summaries:
             summary = tf.Summary()
             summary_value = summary.value.add()
