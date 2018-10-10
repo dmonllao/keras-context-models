@@ -40,7 +40,7 @@ def it_them():
 
     datasets = []
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    for f in os.listdir(os.path.join(script_dir, 'datasets')):
+    for f in os.listdir(os.path.join(script_dir, 'datasets')).sort():
         if re.match('^dataset\d\.csv', f) is None:
             continue
         dataset_id, _ = os.path.splitext(f)
@@ -74,6 +74,8 @@ def load(params, test_datasets):
     # are relatively small.
     datasets = {}
     for dataset_id in test_dataset_list(test_datasets):
+
+        # Init the container for all other datasets as training data.
         datasets[dataset_id] = {'test_dataset_id': dataset_id}
 
         test_file = os.path.join(script_dir, 'datasets', dataset_id + '.csv')
@@ -82,16 +84,32 @@ def load(params, test_datasets):
             if train_dataset_id == dataset_id:
                 continue
 
-            train_files.append(os.path.join(
-                script_dir, 'datasets', train_dataset_id + '.csv'))
+            train_file = os.path.join(
+                script_dir, 'datasets', train_dataset_id + '.csv')
+            train_files.append(train_file)
 
+            # Init the container for each other training dataset as
+            # training data.
+            dataset_key = dataset_id + '-' + train_dataset_id
+            datasets[dataset_key] = {'test_dataset_id': dataset_id}
+            datasets[dataset_key]['x_train'], datasets[dataset_key]['y_train'] = \
+                get_training_samples([train_file])
+            datasets[dataset_key]['x_test'], datasets[dataset_key]['y_test'] = \
+                get_testing_samples(test_file)
+
+            # Standardize values.
+            datasets[dataset_key]['x_test'] = standardize_activity_and_peers(
+                datasets[dataset_key]['x_test'], params)
+            datasets[dataset_key]['x_train'] = standardize_activity_and_peers(
+                datasets[dataset_key]['x_train'], params)
+
+        # Including all other datasets as training data.
         datasets[dataset_id]['x_train'], datasets[dataset_id]['y_train'] = \
             get_training_samples(train_files)
         datasets[dataset_id]['x_test'], datasets[dataset_id]['y_test'] = \
             get_testing_samples(test_file)
 
-        # We don't update params with the new colums on the first run as it
-        # will affect the 2nd run.
+        # Standardize values.
         datasets[dataset_id]['x_test'] = standardize_activity_and_peers(
             datasets[dataset_id]['x_test'], params)
         datasets[dataset_id]['x_train'] = standardize_activity_and_peers(
@@ -106,6 +124,15 @@ def load(params, test_datasets):
     for dataset_id in test_dataset_list(test_datasets):
         datasets[dataset_id]['n_classes'] = datasets[dataset_id]['y_train'].shape[1]
         datasets[dataset_id]['n_features'] = datasets[dataset_id]['x_train'].shape[1]
+
+        # Now for each test single-dataset-for-training combination
+        for train_dataset_id in it_them():
+            if train_dataset_id == dataset_id:
+                continue
+
+            dataset_key = dataset_id + '-' + train_dataset_id
+            datasets[dataset_key]['n_classes'] = datasets[dataset_key]['y_train'].shape[1]
+            datasets[dataset_key]['n_features'] = datasets[dataset_key]['x_train'].shape[1]
 
     return datasets, params
 
