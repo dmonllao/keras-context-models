@@ -9,43 +9,34 @@ import dataset
 import debugger
 
 
-def test(network, datasets, params, run_prefix, model_scores):
+def test(network, datasets, params, run_prefix):
 
     # Local import as this is using multiprocessing.
     from keras.models import Model
     import keras.backend as K
     import tensorflow as tf
-
-    K.set_session(tf.Session())
+    tf.logging.set_verbosity(tf.logging.ERROR)
 
     data = datasets[network['dataset']]
+
+    K.set_session(tf.Session())
 
     start_time = time.time()
     print('\nModel ' + network['name'] + ' using ' +
           network['dataset'] + ' as test dataset')
 
+    params, options = parse_network_obj(network, params,
+                                        data['n_features'],
+                                        data['n_classes'])
     acc = []
     f1 = []
     recall = []
     for index in range(params['repetitions']):
 
-        params['n_features'] = data['n_features']
-        params['n_classes'] = data['n_classes']
-        params['name'] = network['name']
-        params['feature_set'] = network['feature_set']
-
-        if 'options' in network.keys():
-            options = network['options']
-        else:
-            options = {}
-
         # Build the network
         inputs, output = network['network'](params, options)
-
         model = Model(inputs, output)
-
-        if params['verbose'] == 1 and index == 0:
-            print('  Total params: ' + str(model.count_params()))
+        model = compile_model(model, params)
 
         score = test_model(index, model, params, data, name=run_prefix)
         acc.append(score['acc'])
@@ -54,45 +45,78 @@ def test(network, datasets, params, run_prefix, model_scores):
 
         # Clear current session for the next run to avoid histogram problems
         # https://github.com/keras-team/keras/issues/4499#issuecomment-279723967
-        K.clear_session()
+        # COMMENTED OUT JUST TO PREDICT LATER.
+        # K.clear_session()
 
-    print('  Time: ' + str(time.time() - start_time))
+    # print('  Time: ' + str(time.time() - start_time))
 
-    model_score = {
+    # Attaching the last repetition Model object.
+    return {
+        'model': model,
         'name': network['name'],
         'dataset': network['dataset'],
         'acc': np.average(acc),
         'f1': np.average(f1),
         'recall': np.average(recall),
     }
-    model_scores[network['dataset'] + '-' + network['name']] = model_score
 
 
-def test_model(index, model, params, data, name=None):
+def compile_model(model, params):
 
     from keras.optimizers import Adam
-    from keras.callbacks import TensorBoard
 
     model.compile(loss='categorical_crossentropy',
                   optimizer=Adam(lr=params['lr']),
                   metrics=['accuracy'])
+    return model
+
+
+def test_model(index, model, params, data, name=None):
+
+    callbacks = get_fit_callbacks(
+        params, data, name)
+    kwargs = get_fit_kwargs(params, callbacks)
 
     if params['verbose'] == 1 and index == 0:
+        print('  Total params: ' + str(model.count_params()))
         # Print summaries.
         model.summary()
 
-    summary_name = data['test_dataset_id'] + '-' + \
-        str(time.time()) + '-' + params['name']
+    model.fit(data['x_train'], data['y_train'], **kwargs)
+
+    # callbacks[1] is a Metrics instance.
+    # print(callbacks[1].scores)
+    return callbacks[1].scores
+
+
+def parse_network_obj(network, params, n_features, n_classes):
+
+    params['n_features'] = n_features
+    params['n_classes'] = n_classes
+    params['name'] = network['name']
+    params['feature_set'] = network['feature_set']
+
+    if 'options' in network.keys():
+        options = network['options']
+    else:
+        options = {}
+
+    return params, options
+
+
+def get_fit_callbacks(params, data, name):
+    from keras.callbacks import TensorBoard
+
+    summary_name = data['test_dataset_id'] + '-' + params['name'] + '-' + \
+        str(time.time())
     if name is not None:
         summary_name = name + '-' + summary_name
 
     # Histograms need a validation_split.
     if params['debug'] == 1:
         histogram_freq = 30
-        validation_split = 0.05
     else:
         histogram_freq = 0
-        validation_split = 0.
 
     callbacks = []
     summaries = TensorBoard(log_dir='./summaries/' + summary_name,
@@ -104,16 +128,28 @@ def test_model(index, model, params, data, name=None):
         data['x_test'], data['y_test'], summaries, data['test_dataset_id'])
     callbacks.append(metrics)
 
-    model.fit(data['x_train'], data['y_train'],
-              batch_size=params['batch_size'],
-              epochs=params['epochs'],
-              verbose=params['verbose'],
-              validation_split=validation_split,
-              callbacks=callbacks,
-              shuffle=True)
+    return callbacks
 
-    print(metrics.scores)
-    return metrics.scores
+
+def get_fit_kwargs(params, callbacks=None):
+
+    if params['debug'] == 1:
+        validation_split = 0.05
+    else:
+        validation_split = 0.
+
+    kwargs = {
+        'batch_size': params['batch_size'],
+        'epochs': params['epochs'],
+        'verbose': params['verbose'],
+        'validation_split': validation_split,
+        'shuffle': True
+    }
+
+    if callbacks is not None:
+        kwargs['callbacks'] = callbacks
+
+    return kwargs
 
 
 def get_combinations(args, models):
@@ -139,6 +175,41 @@ def get_combinations(args, models):
             network = model_data.copy()
             network['dataset'] = dataset_id
             networks.append(network)
+
+    return networks
+
+
+def get_separate_training_datasets_combinations(args, models):
+
+    dataset_list = dataset.test_dataset_list(args.test_datasets)
+
+    # List of models we will evaluate.
+    if args.model_names is not None:
+        names = args.model_names.split(',')
+        test_models = []
+        for model_data in models:
+            for model_name in names:
+                if model_data['name'] == model_name:
+                    test_models.append(model_data)
+                    break
+    else:
+        # All existing models.
+        test_models = models
+
+    networks = {}
+    for dataset_id in dataset_list:
+
+        for model_data in test_models:
+            key = dataset_id + '-' + model_data['name']
+            networks[key] = []
+
+            for train_dataset_id in dataset.it_them():
+                if train_dataset_id == dataset_id:
+                    continue
+
+                network = model_data.copy()
+                network['dataset'] = dataset_id + '-' + train_dataset_id
+                networks[key].append(network)
 
     return networks
 
